@@ -111,7 +111,9 @@ class LightcurveCanvas(QWidget):
         # Zoom state
         self.base_x_range = None  # Store original X range for zoom calculations
         self.current_zoom_factor = 1.0  # Current time zoom factor (1.0 = no zoom)
-        self.magnitude_zoom_factor = 1.0  # Current magnitude zoom factor (1.0 = no zoom)
+        self.magnitude_zoom_factor = (
+            1.0  # Current magnitude zoom factor (1.0 = no zoom)
+        )
 
         # T0 Helper state
         self.t0_helper_active = False
@@ -141,7 +143,9 @@ class LightcurveCanvas(QWidget):
         self.title_text.text = title
 
     def set_data(self, JD, mag, reset_zoom=True):
-        data_changed = not (np.array_equal(self.JD, JD) and np.array_equal(self.mag, mag))
+        data_changed = not (
+            np.array_equal(self.JD, JD) and np.array_equal(self.mag, mag)
+        )
 
         self.JD = JD
         self.mag = mag

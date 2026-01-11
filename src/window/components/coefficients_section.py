@@ -4,10 +4,11 @@ from PySide6.QtWidgets import (
     QLabel,
     QSpinBox,
     QDoubleSpinBox,
+    QCheckBox,
     QHBoxLayout,
     QVBoxLayout,
 )
-from typing import Callable, Optional
+from typing import Callable
 from enum import Enum
 
 from .ui_component import UIComponent
@@ -17,6 +18,7 @@ from ...models import Algorithm
 class CoefficientType(Enum):
     INTEGER = "integer"
     FLOAT = "float"
+    BOOLEAN = "boolean"
 
 
 class Coefficient:
@@ -25,12 +27,12 @@ class Coefficient:
         key: str,
         label: str,
         coefficient_type: CoefficientType,
-        default_value: Union[int, float],
-        min_value: Union[int, float],
-        max_value: Union[int, float],
+        default_value: Union[int, float, bool],
+        min_value: Union[int, float] = 0,
+        max_value: Union[int, float] = 100,
         decimals: int = 2,
         step: Union[int, float] = 1,
-        description: str = ""
+        description: str = "",
     ):
         self.key = key
         self.label = label
@@ -42,20 +44,22 @@ class Coefficient:
         self.step = step
         self.description = description
 
-    def create_widget(self) -> Union[QSpinBox, QDoubleSpinBox]:
+    def create_widget(self) -> Union[QSpinBox, QDoubleSpinBox, QCheckBox]:
         """Create the appropriate widget for this coefficient."""
         if self.coefficient_type == CoefficientType.INTEGER:
             widget = QSpinBox()
             widget.setRange(int(self.min_value), int(self.max_value))
             widget.setValue(int(self.default_value))
             widget.setSingleStep(int(self.step))
-        else:  # FLOAT
+        elif self.coefficient_type == CoefficientType.FLOAT:
             widget = QDoubleSpinBox()
             widget.setRange(float(self.min_value), float(self.max_value))
             widget.setValue(float(self.default_value))
             widget.setDecimals(self.decimals)
             widget.setSingleStep(float(self.step))
-
+        else:  # BOOLEAN
+            widget = QCheckBox()
+            widget.setChecked(bool(self.default_value))
         return widget
 
 
@@ -73,7 +77,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             default_value=2,
             min_value=1,
             max_value=100,
-            description="Gap between indices for Algol star analysis"
+            description="Gap between indices for Algol star analysis",
         ),
         Coefficient(
             key="cut_ratio",
@@ -83,16 +87,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             min_value=0.01,
             max_value=0.99,
             step=0.05,
-            description="Ratio for cutting data in Algol analysis"
-        ),
-        Coefficient(
-            key="padding",
-            label="Padding:",
-            coefficient_type=CoefficientType.INTEGER,
-            default_value=3,
-            min_value=0,
-            max_value=50,
-            description="Padding value for Algol calculations"
+            description="Ratio for cutting data in Algol analysis",
         ),
         Coefficient(
             key="min_interval_points",
@@ -101,7 +96,14 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             default_value=5,
             min_value=1,
             max_value=100,
-            description="Minimum points required for interval analysis"
+            description="Minimum points required for interval analysis",
+        ),
+        Coefficient(
+            key="fill_remaining",
+            label="Fill Remaining:",
+            coefficient_type=CoefficientType.BOOLEAN,
+            default_value=False,
+            description="Fill all points not covered by main flow with intervals",
         ),
     ],
     Algorithm.MAGNITUDE_INVERTED_GB_AT: [
@@ -112,7 +114,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             default_value=2,
             min_value=1,
             max_value=100,
-            description="Gap between indices for inverted Algol star analysis"
+            description="Gap between indices for inverted Algol star analysis",
         ),
         Coefficient(
             key="cut_ratio",
@@ -122,16 +124,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             min_value=0.01,
             max_value=0.99,
             step=0.05,
-            description="Ratio for cutting data in inverted Algol analysis"
-        ),
-        Coefficient(
-            key="padding",
-            label="Padding:",
-            coefficient_type=CoefficientType.INTEGER,
-            default_value=3,
-            min_value=0,
-            max_value=50,
-            description="Padding value for inverted Algol calculations"
+            description="Ratio for cutting data in inverted Algol analysis",
         ),
         Coefficient(
             key="min_interval_points",
@@ -140,7 +133,14 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             default_value=5,
             min_value=1,
             max_value=100,
-            description="Minimum points required for inverted interval analysis"
+            description="Minimum points required for inverted interval analysis",
+        ),
+        Coefficient(
+            key="fill_remaining",
+            label="Fill Remaining:",
+            coefficient_type=CoefficientType.BOOLEAN,
+            default_value=False,
+            description="Fill all points not covered by main flow with intervals",
         ),
     ],
     Algorithm.S_DIPS: [
@@ -152,20 +152,36 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             min_value=0.01,
             max_value=100.00,
             step=0.01,
-            description="Alpha value for S-DIPS analysis"
+            description="Alpha value for S-DIPS analysis",
         ),
     ],
 }
 
 
+def get_default_params_for_algorithm(
+    algo_type: Algorithm,
+) -> Dict[str, Union[int, float, bool]]:
+    """Get default parameter values for a given algorithm type."""
+    coefficients = STAR_TYPE_COEFFICIENTS.get(algo_type, [])
+    return {coeff.key: coeff.default_value for coeff in coefficients}
+
+
 class CoefficientsSection(UIComponent):
     """Coefficients configuration component."""
 
-    def __init__(self, parent: Optional[QWidget] = None, coefficient_callback: Optional[Callable[[str, Union[int, float]], None]] = None):
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        coefficient_callback: Optional[
+            Callable[[str, Union[int, float, bool]], None]
+        ] = None,
+    ):
         super().__init__("Coefficients", parent)
         self.coefficient_callback = coefficient_callback
         self.current_star_type = Algorithm.GB_AT
-        self.coefficient_widgets: Dict[str, Union[QSpinBox, QDoubleSpinBox]] = {}
+        self.coefficient_widgets: Dict[
+            str, Union[QSpinBox, QDoubleSpinBox, QCheckBox]
+        ] = {}
         self.layouts: List[QHBoxLayout] = []
         self.main_layout = None
 
@@ -191,9 +207,18 @@ class CoefficientsSection(UIComponent):
             layout.addWidget(QLabel(coefficient.label))
 
             widget = coefficient.create_widget()
-            widget.valueChanged.connect(
-                lambda value, key=coefficient.key: self._on_coefficient_changed(key, value)
-            )
+            if coefficient.coefficient_type == CoefficientType.BOOLEAN:
+                widget.stateChanged.connect(
+                    lambda state, key=coefficient.key: self._on_coefficient_changed(
+                        key, bool(state)
+                    )
+                )
+            else:
+                widget.valueChanged.connect(
+                    lambda value, key=coefficient.key: self._on_coefficient_changed(
+                        key, value
+                    )
+                )
             self.coefficient_widgets[coefficient.key] = widget
             layout.addWidget(widget)
 
@@ -219,7 +244,10 @@ class CoefficientsSection(UIComponent):
         for key, widget in self.coefficient_widgets.items():
             if key in params:
                 widget.blockSignals(True)
-                widget.setValue(params[key])
+                if isinstance(widget, QCheckBox):
+                    widget.setChecked(bool(params[key]))
+                else:
+                    widget.setValue(params[key])
                 widget.blockSignals(False)
 
     def set_star_type(self, algo_type: Algorithm):
@@ -230,14 +258,17 @@ class CoefficientsSection(UIComponent):
         self.current_star_type = algo_type
         self._create_coefficient_widgets()
 
-    def _on_coefficient_changed(self, key: str, value: Union[int, float]):
+    def _on_coefficient_changed(self, key: str, value: Union[int, float, bool]):
         """Handle coefficient value changes."""
         if self.coefficient_callback:
             self.coefficient_callback(key, value)
 
-    def get_coefficient_values(self) -> Dict[str, Union[int, float]]:
+    def get_coefficient_values(self) -> Dict[str, Union[int, float, bool]]:
         """Get current values of all coefficients."""
-        return {
-            key: widget.value()
-            for key, widget in self.coefficient_widgets.items()
-        }
+        result = {}
+        for key, widget in self.coefficient_widgets.items():
+            if isinstance(widget, QCheckBox):
+                result[key] = widget.isChecked()
+            else:
+                result[key] = widget.value()
+        return result

@@ -14,11 +14,11 @@ class InfoArea(UIComponent):
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
         self.info_label.setStyleSheet(f"""
-            background-color: {COLORS['bg_panel']};
-            border: 1px solid {COLORS['border']};
+            background-color: {COLORS["bg_panel"]};
+            border: 1px solid {COLORS["border"]};
             border-radius: 6px;
             padding: 10px;
-            color: {COLORS['text']};
+            color: {COLORS["text"]};
             font-size: 11px;
         """)
         self.info_label.setMinimumHeight(100)

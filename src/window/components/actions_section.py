@@ -21,7 +21,7 @@ class ActionsSection(UIComponent):
         self.btn_compute = QPushButton("Load + Compute")
         self.btn_compute.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLORS['success']};
+                background-color: {COLORS["success"]};
                 color: white;
                 font-weight: bold;
                 padding: 8px;

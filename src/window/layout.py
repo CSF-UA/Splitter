@@ -15,7 +15,13 @@ import numpy as np
 from src.models import Algorithm
 from src.contants import COLORS
 from src.canvas import LightcurveCanvas
-from src.core import get_data, save_data, splitting_algol_configurable, splitting_normal, check_up
+from src.core import (
+    get_data,
+    save_data,
+    splitting_algol_configurable,
+    splitting_normal,
+    check_up,
+)
 from src.window.components import (
     FileSection,
     AlgorithmSection,
@@ -27,6 +33,7 @@ from src.window.components import (
     IntervalNavigationSection,
     ZoomSection,
 )
+from src.window.components.coefficients_section import get_default_params_for_algorithm
 
 
 class SplitterWindow(QMainWindow):
@@ -34,26 +41,14 @@ class SplitterWindow(QMainWindow):
         super().__init__()
 
         self.fname: str = ""
-        self.T0: float = 2.5
+        self.T0: float = 0.0
         self.algo_type: Algorithm = Algorithm.GB_AT
 
         self.JD: np.ndarray = np.array([])
         self.mag: np.ndarray = np.array([])
 
         # Layers structure
-        self.layers = [
-            {
-                "params": {
-                    "algol_index_gap": 2,
-                    "cut_ratio": 0.25,
-                    "padding": 3,
-                    "min_interval_points": 5,
-                },
-                "intervals": {"start": [], "finish": []},
-            }
-        ]
-        self.current_layer_idx = 0
-
+        self._reset_layers()
 
         # UI Components
         self.file_section = FileSection(self)
@@ -62,17 +57,34 @@ class SplitterWindow(QMainWindow):
         self.actions_section = ActionsSection(self)
         self.info_area = InfoArea(self)
         self.layers_section = LayersSection(self)
-        self.coefficients_section = CoefficientsSection(self, self._on_coefficient_change)
+        self.coefficients_section = CoefficientsSection(
+            self, self._on_coefficient_change
+        )
         self.interval_nav_section = IntervalNavigationSection(self)
-        self.zoom_section = ZoomSection(self, self._on_time_zoom_change, self._on_magnitude_zoom_change, self._on_zoom_reset)
+        self.zoom_section = ZoomSection(
+            self,
+            self._on_time_zoom_change,
+            self._on_magnitude_zoom_change,
+            self._on_zoom_reset,
+        )
 
         self._setup_ui()
         self._setup_shortcuts()
         self._apply_style()
 
+    def _reset_layers(self):
+        """Reset layers to initial state (single default layer)."""
+        self.layers = [
+            {
+                "params": get_default_params_for_algorithm(self.algo_type),
+                "intervals": {"start": [], "finish": []},
+            }
+        ]
+        self.current_layer_idx = 0
+
     def _setup_ui(self):
         """Build the user interface."""
-        self.setWindowTitle("Splitter v4.0")
+        self.setWindowTitle("Splitter v4.0.1")
         self.setMinimumSize(1400, 800)
 
         # Central widget
@@ -168,6 +180,12 @@ class SplitterWindow(QMainWindow):
         # Set initial T0 value
         self.t0_section.update_state(t0_value=self.T0)
 
+        # Show period section only if S-DIPS is selected (hidden by default since default is GB_AT)
+        if self.algo_type == Algorithm.S_DIPS:
+            self.t0_section.get_widget().setVisible(True)
+        else:
+            self.t0_section.get_widget().setVisible(False)
+
         # Set initial coefficients
         self.coefficients_section.update_coefficients(self.layers[0]["params"])
 
@@ -212,16 +230,16 @@ class SplitterWindow(QMainWindow):
         """Apply light theme stylesheet matching v4.0."""
         self.setStyleSheet(f"""
             QMainWindow {{
-                background-color: {COLORS['bg_dark']};
+                background-color: {COLORS["bg_dark"]};
             }}
             QWidget {{
-                color: {COLORS['text']};
+                color: {COLORS["text"]};
                 font-family: 'Segoe UI', 'SF Pro Display', sans-serif;
                 font-size: 12px;
             }}
             QGroupBox {{
-                background-color: {COLORS['bg_panel']};
-                border: 1px solid {COLORS['border']};
+                background-color: {COLORS["bg_panel"]};
+                border: 1px solid {COLORS["border"]};
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 8px;
@@ -231,55 +249,55 @@ class SplitterWindow(QMainWindow):
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-                color: {COLORS['accent']};
+                color: {COLORS["accent"]};
             }}
             QPushButton {{
-                background-color: {COLORS['bg_button']};
-                border: 1px solid {COLORS['border']};
+                background-color: {COLORS["bg_button"]};
+                border: 1px solid {COLORS["border"]};
                 border-radius: 6px;
                 padding: 6px 12px;
-                color: {COLORS['text']};
+                color: {COLORS["text"]};
             }}
             QPushButton:hover {{
-                background-color: {COLORS['bg_button_hover']};
+                background-color: {COLORS["bg_button_hover"]};
             }}
             QPushButton:pressed {{
-                background-color: {COLORS['accent']};
+                background-color: {COLORS["accent"]};
                 color: white;
             }}
             QPushButton:checked {{
-                background-color: {COLORS['accent']};
+                background-color: {COLORS["accent"]};
                 color: white;
             }}
             QLineEdit, QSpinBox, QDoubleSpinBox {{
-                background-color: {COLORS['bg_panel']};
-                border: 1px solid {COLORS['border']};
+                background-color: {COLORS["bg_panel"]};
+                border: 1px solid {COLORS["border"]};
                 border-radius: 4px;
                 padding: 4px 8px;
-                color: {COLORS['text']};
+                color: {COLORS["text"]};
             }}
             QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-                border-color: {COLORS['accent']};
+                border-color: {COLORS["accent"]};
             }}
             QRadioButton {{
                 spacing: 8px;
-                color: {COLORS['text']};
+                color: {COLORS["text"]};
             }}
             QRadioButton::indicator {{
                 width: 16px;
                 height: 16px;
                 border-radius: 8px;
-                border: 2px solid {COLORS['border']};
-                background-color: {COLORS['bg_panel']};
+                border: 2px solid {COLORS["border"]};
+                background-color: {COLORS["bg_panel"]};
             }}
             QRadioButton::indicator:checked {{
-                background-color: {COLORS['accent']};
-                border-color: {COLORS['accent']};
+                background-color: {COLORS["accent"]};
+                border-color: {COLORS["accent"]};
             }}
             QStatusBar {{
-                background-color: {COLORS['bg_panel']};
-                color: {COLORS['text_dim']};
-                border-top: 1px solid {COLORS['border']};
+                background-color: {COLORS["bg_panel"]};
+                color: {COLORS["text_dim"]};
+                border-top: 1px solid {COLORS["border"]};
             }}
             QLabel {{
                 background-color: transparent;
@@ -317,12 +335,18 @@ class SplitterWindow(QMainWindow):
             for layer in self.layers:
                 layer["intervals"] = {"start": [], "finish": []}
 
+            # Reset period after file is loaded
+            self.T0 = 0.0
+            self.t0_section.update_state(t0_value=0.0)
+            self.t0_section.set_error_state(False)
+
             # Update canvas with title
             self.canvas.set_title(self.fname, self.algo_type)
             self.canvas.set_data(self.JD, self.mag)
             self.canvas.set_layers(self.layers)
             self._update_interval_navigation_status()
-
+            self._reset_layers()
+            self._update_layer_ui()
             # Enable time expansion section now that we have data
             self.zoom_section.set_enabled(True)
 
@@ -343,12 +367,48 @@ class SplitterWindow(QMainWindow):
             button.text()
         )  # Extract "Algol" or "Normal" from button text
         self.canvas.set_title(self.fname, self.algo_type)
+
+        # Update params for all layers to match the new algorithm type
+        new_default_params = get_default_params_for_algorithm(self.algo_type)
+        for layer in self.layers:
+            layer["params"] = new_default_params.copy()
+            # Clear intervals since they're algorithm-specific
+            layer["intervals"] = {"start": [], "finish": []}
+
+        # Update coefficients section UI
         self.coefficients_section.set_star_type(self.algo_type)
+        self.coefficients_section.update_coefficients(
+            self.layers[self.current_layer_idx]["params"]
+        )
+
+        # Update canvas with cleared intervals
+        if len(self.JD) > 0:
+            self.canvas.set_layers(self.layers)
+
+        # Show period section only if S-DIPS is selected
+        if self.algo_type == Algorithm.S_DIPS:
+            self.t0_section.get_widget().setVisible(True)
+            # Update error state for period field based on T0 value
+            if self.T0 <= 0.0:
+                self.t0_section.set_error_state(True)
+            else:
+                self.t0_section.set_error_state(False)
+        else:
+            self.t0_section.get_widget().setVisible(False)
+            self.t0_section.set_error_state(False)
+
+        self._update_interval_navigation_status()
         self._set_info(f"Star type: {self.algo_type}")
 
     def _on_t0_change(self, value):
         """Handle T0 value change."""
         self.T0 = value
+        # Update error state: show error if S-DIPS is selected and T0 is invalid
+        if self.algo_type == Algorithm.S_DIPS:
+            if self.T0 <= 0.0:
+                self.t0_section.set_error_state(True)
+            else:
+                self.t0_section.set_error_state(False)
 
     def _toggle_t0_helper(self):
         """Toggle T0 helper mode."""
@@ -390,9 +450,7 @@ class SplitterWindow(QMainWindow):
         if t0_val is not None:
             self.T0 = t0_val
             self.t0_section.spin_t0.setValue(t0_val)
-            self._set_info(f"T0 = {t0_val:.6f} days\n" f"({t0_val * 24:.4f} hours)")
-
-
+            self._set_info(f"T0 = {t0_val:.6f} days\n({t0_val * 24:.4f} hours)")
 
     def _load_and_compute(self):
         """Load data and compute intervals."""
@@ -415,11 +473,21 @@ class SplitterWindow(QMainWindow):
         if self.t0_section.btn_t0_helper.isChecked():
             self._cancel_t0_helper()
 
+        # Validate T0 for S-DIPS algorithm
+        if self.algo_type == Algorithm.S_DIPS:
+            if self.T0 <= 0.0:
+                self.t0_section.set_error_state(True)
+                self._set_info(
+                    "Error: Period (T0) is required for S-DIPS algorithm.\n\n"
+                    "Please enter a valid period value before computing."
+                )
+                self.status_bar.showMessage("Error: Period required for S-DIPS")
+                return
+            else:
+                self.t0_section.set_error_state(False)
+
         # Start synchronous computation for active layer
         try:
-            active_layer = self.layers[self.current_layer_idx]
-            params = active_layer["params"]
-
             # Disable button during computation
             self.actions_section.btn_compute.setEnabled(False)
             self._set_info("Computing intervals...\n(This may take a moment)")
@@ -432,7 +500,7 @@ class SplitterWindow(QMainWindow):
             self.actions_section.btn_compute.setEnabled(True)
 
             count = len(l_start)
-            total = sum(len(l["intervals"]["start"]) for l in self.layers)
+            total = sum(len(_["intervals"]["start"]) for _ in self.layers)
             self._update_interval_navigation_status()
             self._set_info(
                 f"Layer {self.current_layer_idx + 1} updated.\n"
@@ -452,6 +520,13 @@ class SplitterWindow(QMainWindow):
         active_layer = self.layers[self.current_layer_idx]
         params = active_layer["params"]
 
+        # Ensure params have all required keys for the current algorithm type
+        # This is a safety check in case params get out of sync
+        required_params = get_default_params_for_algorithm(self.algo_type)
+        for key, default_value in required_params.items():
+            if key not in params:
+                params[key] = default_value
+
         # Collect excluded indices from all previous layers
         excluded_indices = set()
         for layer_idx in range(self.current_layer_idx):
@@ -468,9 +543,9 @@ class SplitterWindow(QMainWindow):
                 self.mag,
                 index_gap=params["algol_index_gap"],
                 cut_ratio=params["cut_ratio"],
-                padding=params["padding"],
                 min_interval_points=params["min_interval_points"],
                 excluded_indices=excluded_indices,
+                fill_remaining=params.get("fill_remaining", False),
             )
         elif self.algo_type == Algorithm.MAGNITUDE_INVERTED_GB_AT:
             l_start, l_finish = splitting_algol_configurable(
@@ -478,16 +553,16 @@ class SplitterWindow(QMainWindow):
                 self.mag,
                 index_gap=params["algol_index_gap"],
                 cut_ratio=params["cut_ratio"],
-                padding=params["padding"],
                 min_interval_points=params["min_interval_points"],
                 excluded_indices=excluded_indices,
                 is_inverted=True,
+                fill_remaining=params.get("fill_remaining", False),
             )
         else:  # Algorithm.S_DIPS
-            l_start, l_finish = splitting_normal(self.JD, self.mag, self.T0, excluded_indices=excluded_indices)
-            l_start, l_finish = check_up(
-                self.JD, self.mag, l_start, l_finish, self.T0
+            l_start, l_finish = splitting_normal(
+                self.JD, self.mag, self.T0, excluded_indices=excluded_indices
             )
+            l_start, l_finish = check_up(self.JD, self.mag, l_start, l_finish, self.T0)
 
         # Update active layer results
         active_layer["intervals"]["start"] = list(l_start)
@@ -498,7 +573,9 @@ class SplitterWindow(QMainWindow):
 
         # Update canvas with title
         self.canvas.set_title(self.fname, self.algo_type)
-        self.canvas.set_data(self.JD, self.mag, reset_zoom=False)  # Preserve zoom when recomputing intervals
+        self.canvas.set_data(
+            self.JD, self.mag, reset_zoom=False
+        )  # Preserve zoom when recomputing intervals
         self.canvas.set_layers(self.layers)
 
         # Ensure time expansion section is enabled when we have data
@@ -512,7 +589,7 @@ class SplitterWindow(QMainWindow):
         if self.canvas.selected_interval is None and len(self.JD) > 0:
             layer = self.layers[self.current_layer_idx]
             count = len(layer["intervals"]["start"])
-            total = sum(len(l["intervals"]["start"]) for l in self.layers)
+            total = sum(len(_["intervals"]["start"]) for _ in self.layers)
             self._set_info(
                 f"Layer {self.current_layer_idx + 1} updated.\n"
                 f"Found {count} intervals.\n\n"

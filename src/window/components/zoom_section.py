@@ -41,33 +41,37 @@ class ZoomSection(UIComponent):
 
         # X parameter section
         x_group = self._create_parameter_section(
-            "X", 0.1, 100.0, 1.0, 
-            self._on_x_slider_changed,
-            self._update_x_value
+            "X", 0.1, 100.0, 1.0, self._on_x_slider_changed, self._update_x_value
         )
-        self.x_slider = x_group['slider']
-        self.x_display = x_group['display']
-        self.x_plus_btn = x_group['plus_btn']
-        self.x_minus_btn = x_group['minus_btn']
-        self.x_reset_btn = x_group['reset_btn']
-        layout.addLayout(x_group['layout'])
+        self.x_slider = x_group["slider"]
+        self.x_display = x_group["display"]
+        self.x_plus_btn = x_group["plus_btn"]
+        self.x_minus_btn = x_group["minus_btn"]
+        self.x_reset_btn = x_group["reset_btn"]
+        layout.addLayout(x_group["layout"])
 
         # Y parameter section
         y_group = self._create_parameter_section(
-            "Y", 0.1, 100.0, 1.0,
-            self._on_y_slider_changed,
-            self._update_y_value
+            "Y", 0.1, 100.0, 1.0, self._on_y_slider_changed, self._update_y_value
         )
-        self.y_slider = y_group['slider']
-        self.y_display = y_group['display']
-        self.y_plus_btn = y_group['plus_btn']
-        self.y_minus_btn = y_group['minus_btn']
-        self.y_reset_btn = y_group['reset_btn']
-        layout.addLayout(y_group['layout'])
+        self.y_slider = y_group["slider"]
+        self.y_display = y_group["display"]
+        self.y_plus_btn = y_group["plus_btn"]
+        self.y_minus_btn = y_group["minus_btn"]
+        self.y_reset_btn = y_group["reset_btn"]
+        layout.addLayout(y_group["layout"])
 
         return widget
 
-    def _create_parameter_section(self, label_text: str, min_val: float, max_val: float, default_val: float, slider_callback, value_callback):
+    def _create_parameter_section(
+        self,
+        label_text: str,
+        min_val: float,
+        max_val: float,
+        default_val: float,
+        slider_callback,
+        value_callback,
+    ):
         """Create a parameter control section with label, display, slider, and buttons."""
         # Label and display
         label = QLabel(f"{label_text}:")
@@ -93,15 +97,27 @@ class ZoomSection(UIComponent):
         # Control buttons
         plus_btn = QPushButton("+")
         plus_btn.setFixedWidth(40)
-        plus_btn.clicked.connect(lambda: self._adjust_parameter(display, slider, 0.1, min_val, max_val, value_callback))
+        plus_btn.clicked.connect(
+            lambda: self._adjust_parameter(
+                display, slider, 0.1, min_val, max_val, value_callback
+            )
+        )
 
         minus_btn = QPushButton("-")
         minus_btn.setFixedWidth(40)
-        minus_btn.clicked.connect(lambda: self._adjust_parameter(display, slider, -0.1, min_val, max_val, value_callback))
+        minus_btn.clicked.connect(
+            lambda: self._adjust_parameter(
+                display, slider, -0.1, min_val, max_val, value_callback
+            )
+        )
 
         reset_btn = QPushButton("⟳")
         reset_btn.setFixedWidth(40)
-        reset_btn.clicked.connect(lambda: self._reset_parameter(display, slider, default_val, min_val, max_val, value_callback))
+        reset_btn.clicked.connect(
+            lambda: self._reset_parameter(
+                display, slider, default_val, min_val, max_val, value_callback
+            )
+        )
 
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
@@ -117,12 +133,12 @@ class ZoomSection(UIComponent):
         param_layout.addLayout(buttons_layout)
 
         return {
-            'layout': param_layout,
-            'display': display,
-            'slider': slider,
-            'plus_btn': plus_btn,
-            'minus_btn': minus_btn,
-            'reset_btn': reset_btn
+            "layout": param_layout,
+            "display": display,
+            "slider": slider,
+            "plus_btn": plus_btn,
+            "minus_btn": minus_btn,
+            "reset_btn": reset_btn,
         }
 
     def _value_to_slider(self, value: float, min_val: float, max_val: float) -> int:
@@ -134,28 +150,46 @@ class ZoomSection(UIComponent):
         normalized = (value - min_val) / range_size
         return int(1 + normalized * 999)
 
-    def _slider_to_value(self, slider_value: int, min_val: float, max_val: float) -> float:
+    def _slider_to_value(
+        self, slider_value: int, min_val: float, max_val: float
+    ) -> float:
         """Convert slider position to parameter value."""
         normalized = (slider_value - 1) / 999.0
         return min_val + normalized * (max_val - min_val)
 
-    def _adjust_parameter(self, display, slider, delta: float, min_val: float, max_val: float, value_callback):
+    def _adjust_parameter(
+        self,
+        display,
+        slider,
+        delta: float,
+        min_val: float,
+        max_val: float,
+        value_callback,
+    ):
         """Adjust parameter value by delta."""
         current_value = display.value()
         new_value = max(min_val, min(max_val, current_value + delta))
         slider_pos = self._value_to_slider(new_value, min_val, max_val)
-        
+
         # Update display and slider
         display.setValue(new_value)
         slider.blockSignals(True)
         slider.setValue(slider_pos)
         slider.blockSignals(False)
-        
+
         # Update internal state and external callback directly with exact value
         # to avoid precision loss from round-trip conversion
         value_callback(new_value)
 
-    def _reset_parameter(self, display, slider, default_val: float, min_val: float, max_val: float, value_callback):
+    def _reset_parameter(
+        self,
+        display,
+        slider,
+        default_val: float,
+        min_val: float,
+        max_val: float,
+        value_callback,
+    ):
         """Reset parameter to default value."""
         display.setValue(default_val)
         slider.blockSignals(True)
@@ -186,7 +220,6 @@ class ZoomSection(UIComponent):
         zoom_factor = self._slider_to_value(slider_value, 0.1, 100.0)
         self.y_display.setValue(zoom_factor)
         self._update_y_value(zoom_factor)
-
 
     def set_x_zoom(self, x_zoom: float):
         """Set the X zoom factor programmatically (time axis)."""

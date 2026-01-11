@@ -23,7 +23,9 @@ class AlgorithmSection(UIComponent):
         self.radio_algol.setChecked(True)
         layout.addWidget(self.radio_algol)
 
-        self.radio_inverted_algol = QRadioButton(Algorithm.MAGNITUDE_INVERTED_GB_AT.value)
+        self.radio_inverted_algol = QRadioButton(
+            Algorithm.MAGNITUDE_INVERTED_GB_AT.value
+        )
         layout.addWidget(self.radio_inverted_algol)
 
         self.radio_normal = QRadioButton(Algorithm.S_DIPS.value)
