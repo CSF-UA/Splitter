@@ -372,8 +372,6 @@ class SplitterWindow(QMainWindow):
         new_default_params = get_default_params_for_algorithm(self.algo_type)
         for layer in self.layers:
             layer["params"] = new_default_params.copy()
-            # Clear intervals since they're algorithm-specific
-            layer["intervals"] = {"start": [], "finish": []}
 
         # Update coefficients section UI
         self.coefficients_section.set_star_type(self.algo_type)
@@ -381,7 +379,7 @@ class SplitterWindow(QMainWindow):
             self.layers[self.current_layer_idx]["params"]
         )
 
-        # Update canvas with cleared intervals
+        # Update canvas with preserved intervals
         if len(self.JD) > 0:
             self.canvas.set_layers(self.layers)
 

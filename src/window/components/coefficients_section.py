@@ -76,7 +76,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             coefficient_type=CoefficientType.INTEGER,
             default_value=2,
             min_value=1,
-            max_value=100,
+            max_value=1000,
             description="Gap between indices for Algol star analysis",
         ),
         Coefficient(
@@ -95,7 +95,7 @@ STAR_TYPE_COEFFICIENTS: Dict[Algorithm, List[Coefficient]] = {
             coefficient_type=CoefficientType.INTEGER,
             default_value=5,
             min_value=1,
-            max_value=100,
+            max_value=1000,
             description="Minimum points required for interval analysis",
         ),
         Coefficient(
