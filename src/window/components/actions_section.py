@@ -35,7 +35,7 @@ class ActionsSection(UIComponent):
         self.btn_remove = QPushButton("Remove Selected")
         layout.addWidget(self.btn_remove)
 
-        self.btn_save = QPushButton("Save (.da!)")
+        self.btn_save = QPushButton("Save (.txt file)")
         layout.addWidget(self.btn_save)
 
         self.btn_reset = QPushButton("Reset View")

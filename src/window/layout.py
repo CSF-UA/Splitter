@@ -666,14 +666,14 @@ class SplitterWindow(QMainWindow):
 
         # Open save dialog
         base_name = os.path.splitext(os.path.basename(self.fname))[0]
-        default_name = f"{base_name}.da!"
+        default_name = f"{base_name}.txt"
         suggested_path = os.path.join(os.path.dirname(self.fname), default_name)
 
         fname, _ = QFileDialog.getSaveFileName(
             self,
             "Save Intervals",
             suggested_path,
-            "Interval files (*.da!);;All files (*.*)",
+            "Interval .txt file (*.txt);;All files (*.*)",
         )
 
         if not fname:

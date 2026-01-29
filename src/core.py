@@ -406,14 +406,14 @@ def splitting_normal(
     return intervals_start, intervals_finish
 
 
-def save_data(start, finish, x, fname: str):
-    """Helper to save results (unchanged logic, just type hints)."""
-    fname_out = fname.replace(".tess", ".da!")
-    if fname_out == fname:
-        fname_out = fname + ".da!"
+def save_data(start, finish, _x, fname: str):
+    """Save intervals as whitespace-separated indices (start end), one per line."""
+    fname_out = fname.replace(".tess", ".txt")
+    if fname_out == fname and not fname.lower().endswith(".txt"):
+        fname_out = fname + ".txt"
 
     # Using list comprehension and join is faster than string concatenation in a loop
-    lines = [f"{s} {x[s]} {f} {x[f]}" for s, f in zip(start, finish)]
+    lines = [f"{int(s)} {int(f)}" for s, f in zip(start, finish)]
     data = "\n".join(lines) + "\n"
 
     with open(fname_out, "w", encoding="utf-8") as f:
