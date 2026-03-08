@@ -19,11 +19,11 @@ COLORS = {
 INTERVAL_COLORS = [
     "#2563eb",  # Blue
     "#dc2626",  # Red
-    "#16a34a",  # Green
+    "#ca8a04",  # Yellow/Gold
     "#ea580c",  # Orange
     "#9333ea",  # Purple
     "#0891b2",  # Cyan
-    "#ca8a04",  # Yellow/Gold
+    "#16a34a",  # Green
     "#c026d3",  # Magenta
     "#059669",  # Emerald
     "#7c3aed",  # Violet

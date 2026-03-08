@@ -245,9 +245,9 @@ class LightcurveCanvas(QWidget):
                 xs = self.JD[s]
                 xf = self.JD[f]
 
-                # Use a larger prime multiplier (7) for better color distribution
-                # Add layer offset to ensure different layers use different color subsets
-                color_idx = (lay_idx * 7 + i * 5) % len(INTERVAL_COLORS)
+                # Shift colors per layer to distinguish them, but cycle sequentially for intervals
+                # to maximize contrast between adjacent intervals.
+                color_idx = (lay_idx * 7 + i) % len(INTERVAL_COLORS)
                 color = INTERVAL_COLORS[color_idx]
 
                 # Check if selected
