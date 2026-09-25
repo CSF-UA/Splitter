@@ -137,8 +137,9 @@ def _dip_period(x, t, depth, tol):
         if depth[main].max() > 1.5 * depth[main].min():
             continue  # a primary and a secondary eclipse in one group
         T = t[0] + (np.arange(np.floor((x[0] - t[0]) / P - c), np.ceil((x[-1] - t[0]) / P - c) + 1) + c) * P
-        full = 0.9 * 3 * tol / np.median(np.diff(x))  # cycles whose whole dip is in the data
-        T = T[np.searchsorted(x, T + 1.5 * tol) - np.searchsorted(x, T - 1.5 * tol) >= full]
+        lo, hi = np.searchsorted(x, T - 1.5 * tol), np.searchsorted(x, T + 1.5 * tol)
+        T = T[[b - a >= 3 and x[a] - tc < -1.4 * tol and x[b - 1] - tc > 1.4 * tol and np.diff(x[a:b]).max() < tol / 2
+               for tc, a, b in zip(T, lo, hi)]]  # cycles whose whole dip is in the data: no gap in +-1.5 tol
         if T.size and (np.abs(t[None, :] - T[:, None]).min(axis=1) < tol).mean() >= 0.8:  # P/2: about half
             break
     else:
@@ -216,8 +217,10 @@ def auto_split(x, y, period=0.0, frac=0.0, min_points=15, minima_only=False, exc
     info = {period, type, eclipses, rejected}. period <= 0 means: find it (type 'no period' and no
     windows if there is none); frac 0 means 0.95, the width that gave the best O-C on real TESS stars."""
     ecl = _eclipses(x, y)
-    if ecl is not None and period > 0 and abs(period / ecl[1] - 1) > 0.01:
-        ecl = None  # the user asks for another period, e.g. to time the spot wave
+    if ecl is not None and period > 0:
+        k = max(period / ecl[1], ecl[1] / period)
+        if round(k) > 3 or abs(k - round(k)) > 0.01 * k:
+            ecl = None  # not the eclipse period or 2, 3 times it or a half, third: e.g. the spot wave
     if ecl is not None:
         y = y - ecl[0]
     period = period if period > 0 else ecl[1] if ecl else find_period(x, y)

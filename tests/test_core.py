@@ -313,6 +313,27 @@ def test_eclipse_mode_one_group_is_one_kind_of_eclipse():
     assert abs(auto_split(x, y)[3]["period"] - P) < 0.02  # not 7.21: a primary and a secondary in one group
 
 
+def spotted_ea(x, r=rng):
+    P, t0 = 9.44, 1.0
+    ph = (x - t0) / P % 1
+    return dip(ph, 0.0, 0.009, 60) + dip(ph, 0.473, 0.01, 35) + 5 * np.sin(2 * np.pi * x / 2.21) + r.normal(0, 0.8, x.size)
+
+
+def test_eclipse_mode_with_repeated_or_missing_points():
+    x = np.sort(np.r_[X, X])  # every time stamp twice
+    assert abs(auto_split(x, spotted_ea(x))[3]["period"] - 9.44) < 0.01
+    x = X[np.random.default_rng(3).random(X.size) > 0.25]  # a quarter of the points missing at random
+    s, f, kinds, info = auto_split(x, spotted_ea(x))
+    assert info["eclipses"] and abs(info["period"] - 9.44) < 0.01, info
+
+
+def test_eclipse_mode_keeps_a_given_multiple_of_the_period():
+    y = spotted_ea(X)
+    for k in (2, 0.5):
+        s, f, kinds, info = auto_split(X, y, period=9.44 * k)
+        assert info["eclipses"] and set(kinds) == {"min"}, (k, info)  # still the eclipses, not the spot wave
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
