@@ -392,6 +392,7 @@ class SplitterWindow(QMainWindow):
             s, f, kinds, info = auto_split(self.JD, self.mag, self.P, p["frac"], p["min_points"], p["minima_only"], excluded)
             if info["period"] > 0:
                 self.period.setValue(info["period"])
+                self.P = info["period"]  # the field rounds to 6 decimals; keep the exact value for the next run
                 extra = f"\n\nP = {info['period']:.6f} d, type {info['type']}\nRejected: {info['rejected'] or 'none'}"
             else:
                 extra = "\n\nNo reliable period found.\nEnter P manually and compute again."
