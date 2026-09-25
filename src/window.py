@@ -393,7 +393,8 @@ class SplitterWindow(QMainWindow):
             if info["period"] > 0:
                 self.period.setValue(info["period"])
                 self.P = info["period"]  # the field rounds to 6 decimals; keep the exact value for the next run
-                extra = f"\n\nP = {info['period']:.6f} d, type {info['type']}\nRejected: {info['rejected'] or 'none'}"
+                extra = (f"\n\nP = {info['period']:.6f} d, type {info['type']}"
+                         f"{chr(10) + 'Eclipse mode: P from the eclipses' if info['eclipses'] else ''}\nRejected: {info['rejected'] or 'none'}")
             else:
                 extra = "\n\nNo reliable period found.\nEnter P manually and compute again."
         elif self.algo == "S-DIPS":

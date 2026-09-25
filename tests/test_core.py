@@ -190,6 +190,129 @@ def test_batch_uses_given_period():
         assert len(s) >= 9 and one_extremum_each(X, s, f, true_centers(P, (0.0,)))
 
 
+def test_auto_spotted_ea():
+    P, t0 = 9.44, 1.0  # narrow eccentric eclipses on a 10 mmag spot wave that rotates in 2.21 d (TIC 140659980)
+    ph = (X - t0) / P % 1
+    y = dip(ph, 0.0, 0.009, 60) + dip(ph, 0.473, 0.01, 35) + 5 * np.sin(2 * np.pi * X / 2.21) + rng.normal(0, 0.8, X.size)
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - P) < 0.01 and info["type"] == "EA" and info["eclipses"], info
+    assert len(s) >= 5 and one_extremum_each(X, s, f, true_centers(P, (t0 / P, t0 / P + 0.473)))
+    s2, f2, _, _ = auto_split(X, y, period=info["period"])  # the GUI passes the found P back on the next run
+    assert (s2, f2) == (s, f)
+
+
+def test_auto_spotted_ea_three_plus_two_eclipses():
+    P, t0, x = 9.44, 1.0, X[X < 24]  # 3 primaries + 2 secondaries: at P/2 the primaries alone fill 3 of 5 cycles
+    ph = (x - t0) / P % 1
+    y = dip(ph, 0.0, 0.009, 60) + dip(ph, 0.473, 0.01, 35) + 5 * np.sin(2 * np.pi * x / 2.21) + rng.normal(0, 0.8, x.size)
+    s, f, kinds, info = auto_split(x, y)
+    assert abs(info["period"] - P) < 0.01, info
+    assert len(s) == 5 and one_extremum_each(x, s, f, true_centers(P, (t0 / P, t0 / P + 0.473), x))
+
+
+def test_auto_narrow_eclipses_any_noise():
+    P = 3.54  # 30 and 20 mmag eclipses 2.4 % of P long: the periodogram is a flat comb of harmonics
+    for seed in range(5):
+        r = np.random.default_rng(seed)
+        ph = X / P % 1
+        y = dip(ph, 0.0, 0.012, 30) + dip(ph, 0.5, 0.012, 20) + 4 * np.sin(2 * np.pi * X / 4.7) + r.normal(0, 1.5, X.size)
+        s, f, kinds, info = auto_split(X, y)
+        assert abs(info["period"] - P) < 2e-3 and len(s) >= 10, (seed, info)
+        assert one_extremum_each(X, s, f, true_centers(P, (0.0, 0.5)))
+
+
+def test_auto_eccentric_equal_eclipses():
+    P = 4.3  # equal eclipses at phases 0 and 0.38: no single fold at P/2 or P/k puts them together
+    ph = X / P % 1
+    y = dip(ph, 0.0, 0.01, 150) + dip(ph, 0.38, 0.01, 150) + rng.normal(0, 2, X.size)
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - P) < 2e-3 and len(s) >= 9, info
+    assert one_extremum_each(X, s, f, true_centers(P, (0.0, 0.38)))
+
+
+def test_auto_ea_with_pulsations():
+    P = 1.9  # eclipses of a star that pulsates (delta Sct-like, 10 mmag): windows only at the eclipses
+    ph = X / P % 1
+    y = (dip(ph, 0.0, 0.025, 120) + dip(ph, 0.5, 0.025, 50) + 10 * np.sin(2 * np.pi * X / 0.0437)
+         + 4 * np.sin(2 * np.pi * X / 0.0611) + rng.normal(0, 2, X.size))
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - P) < 2e-3 and 20 <= len(s) <= 30, (len(s), info)
+    assert one_extremum_each(X, s, f, true_centers(P, (0.0, 0.5)))
+
+
+def test_auto_noiseless_curves():
+    y = 100 * np.sin(2 * np.pi * X / 40.0)  # simulated data without noise: nothing to divide by
+    assert auto_split(X, y)[3]["type"] == "no period"
+    s, f, kinds, info = auto_split(X, 100 * np.sin(2 * np.pi * X / 0.5))
+    assert abs(info["period"] - 0.5) < 1e-3 and len(s) > 90, info
+
+
+def test_eclipse_mode_leaves_pulsators_alone():
+    y = -200 * np.sin(2 * np.pi * X / 2.0) + rng.normal(0, 5, X.size)  # review: the gap once made this "eclipses"
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - 2.0) < 1e-2 and not info["eclipses"] and len(s) >= 20, info
+    assert one_extremum_each(X, s, f, true_centers(2.0, (0.25, 0.75)))
+    y = -50 * np.sin(2 * np.pi * X / 3.0) + rng.normal(0, 3, X.size)
+    y[np.searchsorted(X, 5.0) : np.searchsorted(X, 5.0) + 10] += 40  # one faint 20-min blip
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - 3.0) < 2e-2 and kinds.count("max") >= 6, info
+    y = 300 * np.sin(2 * np.pi * X / 5.0) + dip(X / 2.3 % 1, 0.0, 0.01, 60) + rng.normal(0, 3, X.size)
+    assert not auto_split(X, y)[3]["eclipses"]  # dips shallower than the slow wave: not eclipse mode
+    s, f, kinds, info = auto_split(X, -10 * np.sin(2 * np.pi * X / 10) + rng.normal(0, 3, X.size), period=10.0)
+    assert info["type"] != "EA" and kinds.count("max") >= 1, info  # long period, low S/N: keeps its maxima
+
+
+def test_eclipse_mode_near_gaps_and_edges():
+    ph = X / 2.87 % 1  # 0.4-d eclipses, one cut by the mid-sector gap
+    s, f, kinds, info = auto_split(X, dip(ph, 0.0, 0.07, 500) + dip(ph, 0.5, 0.07, 200) + rng.normal(0, 3, X.size))
+    assert abs(info["period"] - 2.87) < 2e-3 and one_extremum_each(X, s, f, true_centers(2.87, (0.0, 0.5))), info
+    x = np.arange(0, 27, 2 / 1440)  # an eclipse cut by the start of the data must not bias P
+    s, f, kinds, info = auto_split(x, dip(x / 5 % 1, 0.0, 0.06, 500) + dip(x / 5 % 1, 0.5, 0.06, 200) + rng.normal(0, 3, x.size))
+    assert abs(info["period"] - 5.0) < 2e-3, info
+    x = np.sort(np.r_[X, X])  # the same sector twice: repeated time stamps
+    s, f, kinds, info = auto_split(x, dip(x / 1.3 % 1, 0.0, 0.03, 300) + rng.normal(0, 3, x.size))
+    assert abs(info["period"] - 1.3) < 2e-3, info
+
+
+def test_auto_slow_low_amplitude_variable_keeps_its_extrema():
+    y = -4 * np.sin(2 * np.pi * X / 5.0) + rng.normal(0, 5, X.size)  # review 2: 0 windows once
+    s, f, kinds, info = auto_split(X, y)
+    assert abs(info["period"] - 5.0) < 0.05 and len(s) >= 4, (len(s), info)
+
+
+def test_eclipse_mode_dip_lost_at_a_gap_is_no_missed_cycle():
+    x = np.arange(0, 27, 2 / 1440)
+    x = x[~(((x > 9.94) & (x < 10.14)) | ((x > 14.405) & (x < 14.605)))]  # gaps ending 0.3 d before two eclipses
+    P, t0 = 9.44, 1.0
+    ph = (x - t0) / P % 1
+    y = dip(ph, 0.0, 0.009, 60) + dip(ph, 0.473, 0.01, 35) + 5 * np.sin(2 * np.pi * x / 2.21) + rng.normal(0, 0.8, x.size)
+    assert abs(auto_split(x, y)[3]["period"] - P) < 0.01
+
+
+def test_eclipse_mode_no_doubling_on_small_depth_differences():
+    P = 1.25  # one eclipse per cycle; depths alternate by 1.5 % (spots), which is no second eclipse
+    ph = X / P % 1
+    y = dip(ph, 0.0, 0.03, 106) * np.where(np.round(X / P) % 2 == 0, 1.0, 0.98) + rng.normal(0, 0.5, X.size)
+    assert abs(auto_split(X, y)[3]["period"] - P) < 2e-3
+
+
+def test_given_period_other_than_the_eclipses_turns_eclipse_mode_off():
+    P, t0 = 9.44, 1.0  # to time the spot wave the user enters its period
+    ph = (X - t0) / P % 1
+    y = dip(ph, 0.0, 0.009, 60) + dip(ph, 0.473, 0.01, 35) + 5 * np.sin(2 * np.pi * X / 2.21) + rng.normal(0, 0.8, X.size)
+    s, f, kinds, info = auto_split(X, y, period=2.21)
+    assert not info["eclipses"] and len(s) >= 10, (len(s), info)
+
+
+def test_eclipse_mode_one_group_is_one_kind_of_eclipse():
+    x = np.arange(0, 20.3, 2 / 1440)  # TIC 140659980 sector 3: two secondaries and one usable primary
+    x = x[(x < 8.72) | (x > 10.71)]
+    P, t0 = 9.44, 17.86
+    ph = (x - t0) / P % 1
+    y = dip(ph, 0.0, 0.009, 60) + dip(ph, 0.4732, 0.01, 35) + 5 * np.sin(2 * np.pi * x / 2.21) + rng.normal(0, 0.8, x.size)
+    assert abs(auto_split(x, y)[3]["period"] - P) < 0.02  # not 7.21: a primary and a secondary in one group
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

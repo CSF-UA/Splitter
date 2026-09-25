@@ -24,7 +24,14 @@ uv run python tests/test_core.py       # self-checks
 ## Algorithms
 
 - **Auto** (default):
-  - Finds the period unless P is entered: an FFT periodogram of the light curve averaged onto a
+  - Eclipses on slower variability (spots, pulsations, trends): if the curve has narrow dips that
+    only go fainter, Auto removes the slower variability (a 0.5-d running median with the dips
+    masked) and works on the rest. The period then comes from the dip times: the shortest one that
+    puts the dips into one or two phase groups seen in most cycles, doubled if alternate dips
+    differ in depth or timing, refined by PDM. Windows go only to the eclipses, not to spot waves.
+    The info panel says "Eclipse mode: P from the eclipses". A P you enter that differs from it
+    turns eclipse mode off (e.g. to time the spot wave instead).
+  - Otherwise it finds the period unless P is entered: an FFT periodogram of the light curve averaged onto a
     regular time grid, refined by PDM, then multiplied by 2 or 3 while that folds better
     (harmonics of narrow eclipses, two different minima).
   - If there is no reliable period (longer than about half the data span, or no signal), Auto says
