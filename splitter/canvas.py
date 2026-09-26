@@ -38,8 +38,11 @@ class LightcurveCanvas(QWidget):
         self.view.camera.aspect = None
         grid.add_widget(xaxis, row=2, col=2)
         grid.add_widget(row=3, col=2).height_max = 25
-        xaxis.link_view(self.view)
-        yaxis.link_view(self.view)
+        for a in (xaxis, yaxis):
+            a.link_view(self.view)
+        # VisPy relabels an axis only when the camera moves, not when the layout resizes or moves the axis
+        # (a maximised window kept the old labels over the stretched axis): relabel before every draw
+        self.canvas.events.draw.connect(lambda e: [a._view_changed() for a in (xaxis, yaxis)], position="first")
 
         # created in drawing order: bands under points, borders and period helper on top
         self.bands = visuals.Mesh(parent=self.view.scene)
