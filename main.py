@@ -14,6 +14,7 @@ def main():
             del args[i : i + 2]
         return batch(args, period)
 
+    from PySide6.QtCore import Qt
     from PySide6.QtGui import QFont, QFontDatabase
     from PySide6.QtWidgets import QApplication
     from vispy.app import use_app
@@ -23,7 +24,10 @@ def main():
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    app.setPalette(app.style().standardPalette())  # light like the style sheet, also under a dark system theme
+    # light like the style sheet and the plots, also under a dark system theme (Ubuntu): Fusion's palette
+    # follows the system colour scheme unless the app asks for the light one
+    app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+    app.setPalette(app.style().standardPalette())
     font_id = QFontDatabase.addApplicationFont(str(Path(__file__).parent / "fonts" / "inter.ttf"))
     families = QFontDatabase.applicationFontFamilies(font_id) if font_id != -1 else []
     app.setFont(QFont(families[0] if families else "Inter", 10))
