@@ -9,7 +9,7 @@ from vispy import scene
 from vispy.color import Color
 from vispy.scene import AxisWidget, visuals
 
-from src.constants import COLORS, INTERVAL_COLORS
+from splitter.constants import COLORS, INTERVAL_COLORS
 
 
 class LightcurveCanvas(QWidget):

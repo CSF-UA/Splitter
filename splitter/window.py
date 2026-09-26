@@ -11,10 +11,10 @@ from PySide6.QtWidgets import (
     QLabel, QMainWindow, QPushButton, QRadioButton, QSlider, QSpinBox, QVBoxLayout, QWidget,
 )
 
-from src.auto import auto_split
-from src.canvas import LightcurveCanvas
-from src.constants import COLORS
-from src.core import check_up, get_data, save_data, splitting_algol_configurable, splitting_normal
+from splitter.auto import auto_split
+from splitter.canvas import LightcurveCanvas
+from splitter.constants import COLORS
+from splitter.core import check_up, get_data, save_data, splitting_algol_configurable, splitting_normal
 
 # per algorithm: (key, label, default, min, max, step); the widget follows the default's type
 COEFFS = {

@@ -14,7 +14,7 @@ import numpy as np
 from scipy.ndimage import median_filter
 from scipy.signal import find_peaks, peak_prominences
 
-from src.core import get_data, save_data
+from splitter.core import get_data, save_data
 
 NB = 200  # template phase bins
 

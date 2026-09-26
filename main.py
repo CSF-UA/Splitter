@@ -4,7 +4,7 @@ from pathlib import Path
 
 def main():
     if "--batch" in sys.argv:  # headless: uv run main.py --batch [--period P] FILES...
-        from src.auto import batch
+        from splitter.auto import batch
 
         args = [a for a in sys.argv[1:] if a != "--batch"]
         period = 0.0
@@ -19,7 +19,7 @@ def main():
     from vispy.app import use_app
 
     use_app("pyside6")
-    from src.window import SplitterWindow
+    from splitter.window import SplitterWindow
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

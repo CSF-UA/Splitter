@@ -8,8 +8,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.auto import auto_split, batch  # noqa: E402
-from src.core import NN, check_up, get_data, save_data, splitting_algol_configurable, splitting_normal  # noqa: E402
+from splitter.auto import auto_split, batch  # noqa: E402
+from splitter.core import NN, check_up, get_data, save_data, splitting_algol_configurable, splitting_normal  # noqa: E402
 
 rng = np.random.default_rng(0)
 X = np.arange(0, 27, 2 / 1440)

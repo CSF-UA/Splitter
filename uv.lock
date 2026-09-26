@@ -191,7 +191,7 @@ wheels = [
 [[package]]
 name = "splitter"
 version = "5.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "numpy" },
     { name = "pyside6" },
